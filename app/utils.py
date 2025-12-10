@@ -1,6 +1,9 @@
 from django.conf import settings
 from django.db import models
+from django.utils import timezone
 from django.utils.safestring import mark_safe
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters, viewsets
 from unfold.admin import ModelAdmin
 from unfold.contrib.filters.admin import RangeDateFilter
 from unfold.decorators import display
@@ -27,7 +30,7 @@ class SoftDeleteModel(models.Model):
 
     def delete(self, *args, **kwargs):
         """Soft delete the object by setting 'deleted_at' timestamp instead of deleting from the database."""
-        self.deleted_at = models.DateTimeField.now()
+        self.deleted_at = timezone.now()
         self.save()
 
 
@@ -47,3 +50,16 @@ class BaseAdmin(ModelAdmin):
     @display(description="")
     def see_more(self, obj):
         return mark_safe('<span class="material-symbols-outlined">visibility</span>')
+
+
+# Abstract rest framework ModelViewSet
+class BaseModelViewSet(viewsets.ModelViewSet):
+    """Base viewset with common configurations."""
+
+    filter_backends = [
+        filters.SearchFilter,
+        DjangoFilterBackend,
+        filters.OrderingFilter,
+    ]
+    ordering_fields = "__all__"
+    ordering = ["-created_at"]

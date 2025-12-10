@@ -75,6 +75,9 @@ class AddressInline(StackedInline):
 @admin.register(Profile)
 class ProfileAdmin(BaseAdmin):
 
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related("user").prefetch_related("addresses")
+
     # Listview
     list_display = (
         "see_more",
@@ -145,6 +148,9 @@ class ProfileAdmin(BaseAdmin):
 @admin.register(Address)
 class AddressAdmin(BaseAdmin):
 
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related("profile", "profile__user")
+
     # Listview
     list_display = (
         "see_more",
@@ -155,7 +161,40 @@ class AddressAdmin(BaseAdmin):
     )
     list_filter = BaseAdmin.list_filter + ("state",)
 
+    # Changeview
+    fieldsets = (
+        (
+            "Informações",
+            {
+                "classes": ("tab",),
+                "fields": (
+                    "profile",
+                    "zip_code",
+                    "street",
+                    "number",
+                    "neighborhood",
+                    "complement",
+                    "city",
+                    "state",
+                    "country",
+                ),
+            },
+        ),
+        (
+            "Auditoria",
+            {
+                "classes": ("tab",),
+                "fields": (
+                    "created_at",
+                    "updated_at",
+                    "deleted_at",
+                ),
+            },
+        ),
+    )
+    readonly_fields = BaseAdmin.readonly_fields + ("profile",)
+
     # Display functions
     @display(description="Endereço")
     def full_address(self, obj):
-        return obj.__str__()
+        return str(obj)

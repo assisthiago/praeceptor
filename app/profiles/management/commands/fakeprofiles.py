@@ -44,8 +44,8 @@ class Command(BaseCommand):
                 Profile(
                     user=user,
                     type=Profile.TYPE_INSTRUCTOR if i % 5 == 0 else Profile.TYPE_CLIENT,
-                    cpf=_faker.cpf(),
-                    phone=_faker.phone_number(),
+                    cpf=_faker.random_number(digits=11, fix_len=True),
+                    phone=_faker.random_number(digits=11, fix_len=True),
                     birthdate=_faker.date_of_birth(
                         minimum_age=18,
                         maximum_age=50,

@@ -19,25 +19,37 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
-    "unfold",  # before django.contrib.admin
-    "unfold.contrib.filters",  # optional, if special filters are needed
-    "unfold.contrib.forms",  # optional, if special form elements are needed
-    "unfold.contrib.inlines",  # optional, if special inlines are needed
-    "unfold.contrib.import_export",  # optional, if django-import-export package is used
-    "unfold.contrib.guardian",  # optional, if django-guardian package is used
-    "unfold.contrib.simple_history",  # optional, if django-simple-history package is used
-    "unfold.contrib.location_field",  # optional, if django-location-field package is used
-    "unfold.contrib.constance",  # optional, if django-constance package is used
+    "unfold",  # UNFOLD Admin Panel
+    "unfold.contrib.filters",
+    "unfold.contrib.forms",
+    "unfold.contrib.inlines",
+    "unfold.contrib.import_export",
+    "unfold.contrib.guardian",
+    "unfold.contrib.simple_history",
+    "unfold.contrib.location_field",
+    "unfold.contrib.constance",
+    "debug_toolbar",  # Django Debug Toolbar
+    "drf_redesign",  # DRF Redesign
+    "rest_framework",  # Django REST Framework
+    "django_filters",
+    "health_check",  # Basic health check
+    "health_check.db",
+    "health_check.cache",
+    "health_check.storage",
+    "health_check.contrib.migrations",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "drf_yasg",  # Swagger for DRF
     "app.profiles",
 ]
 
 MIDDLEWARE = [
+    "debug_toolbar.middleware.DebugToolbarMiddleware",
+    "querycount.middleware.QueryCountMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -67,6 +79,40 @@ TEMPLATES = [
 WSGI_APPLICATION = "app.wsgi.application"
 
 LIST_PER_PAGE = 20
+
+# REST Framework Settings
+REST_FRAMEWORK = {
+    "DEFAULT_FILTER_BACKENDS": ["django_filters.rest_framework.DjangoFilterBackend"],
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly"],
+    "EXCEPTION_HANDLER": "rest_framework.views.exception_handler",
+    "PAGE_SIZE": LIST_PER_PAGE,
+}
+
+# Health Check Settings
+HEALTH_CHECK = {
+    "DISK_USAGE_MAX": 90,  # percent
+    "MEMORY_MIN": 100,  # in MB
+}
+
+# Django Debug Toolbar Settings
+INTERNAL_IPS = ["127.0.0.1"]
+
+
+# QueryCount Settings
+QUERYCOUNT = {
+    "THRESHOLDS": {
+        "MEDIUM": 10,
+        "HIGH": 20,
+        "MIN_TIME_TO_LOG": 0,
+        "MIN_QUERY_COUNT_TO_LOG": 0,
+    },
+    "IGNORE_REQUEST_PATTERNS": ["/admin/jsi18n/", "/__debug__/"],
+    "IGNORE_SQL_PATTERNS": [],
+    "DISPLAY_DUPLICATES": 1,
+    "RESPONSE_HEADER": "X-DjangoQueryCount-Count",
+}
+
 
 # UNFOLD Settings
 UNFOLD = {
