@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 from django.utils.safestring import mark_safe
 from unfold.admin import ModelAdmin
@@ -32,6 +33,8 @@ class SoftDeleteModel(models.Model):
 
 class BaseAdmin(ModelAdmin):
     """Base admin class with common configurations."""
+
+    list_per_page = settings.LIST_PER_PAGE
 
     list_filter = (
         ("created_at", RangeDateFilter),

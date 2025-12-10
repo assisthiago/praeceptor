@@ -51,14 +51,14 @@ class Address(TimestampedModel, SoftDeleteModel):
     )
 
     # Fields
+    zip_code = models.CharField(verbose_name="cep", max_length=20)
     street = models.CharField(verbose_name="rua", max_length=255)
     number = models.CharField(verbose_name="número", max_length=20)
-    complement = models.CharField(verbose_name="complemento", max_length=255, blank=True, null=True)
     neighborhood = models.CharField(verbose_name="bairro", max_length=100)
+    complement = models.TextField(verbose_name="complemento", max_length=255, blank=True, null=True)
     city = models.CharField(verbose_name="cidade", max_length=100)
     state = models.CharField(verbose_name="estado", max_length=100)
     country = models.CharField(verbose_name="país", max_length=100)
-    zip_code = models.CharField(verbose_name="cep", max_length=20)
 
     class Meta:
         verbose_name = "endereço"

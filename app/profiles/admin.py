@@ -4,7 +4,6 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import Group, User
 from django.utils.safestring import mark_safe
 from unfold.admin import ModelAdmin, StackedInline
-from unfold.contrib.filters.admin import ChoicesDropdownFilter
 from unfold.decorators import display
 from unfold.forms import AdminPasswordChangeForm, UserChangeForm, UserCreationForm
 
@@ -64,8 +63,8 @@ class AddressInline(StackedInline):
         "zip_code",
         "street",
         "number",
-        "complement",
         "neighborhood",
+        "complement",
         "city",
         "state",
         "country",
@@ -92,7 +91,7 @@ class ProfileAdmin(BaseAdmin):
         "phone",
     )
     search_help_text = "Buscar por nome, e-mail, cpf ou telefone"
-    list_filter = BaseAdmin.list_filter + (("type", ChoicesDropdownFilter),)
+    list_filter = BaseAdmin.list_filter + ("type",)
 
     # Changeview
     inlines = (AddressInline,)

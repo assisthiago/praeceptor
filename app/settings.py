@@ -66,6 +66,9 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "app.wsgi.application"
 
+LIST_PER_PAGE = 20
+
+# UNFOLD Settings
 UNFOLD = {
     "SITE_TITLE": "Praeceptor",
     "SITE_HEADER": "Praeceptor",
@@ -85,6 +88,11 @@ UNFOLD = {
             "900": "oklch(38.1% .170 260)",
             "950": "oklch(29.1% .140 260)",
         },
+    },
+    "COMMAND": {
+        "search_models": True,
+        "search_callback": "utils.search_callback",
+        "show_history": True,  # Enable history
     },
 }
 
