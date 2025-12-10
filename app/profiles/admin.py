@@ -81,7 +81,7 @@ class ProfileAdmin(BaseAdmin):
         "id",
         "user_full_name",
         "user_email",
-        "badge_type",
+        "get_type",
     )
     search_fields = (
         "user__first_name",
@@ -138,10 +138,24 @@ class ProfileAdmin(BaseAdmin):
             Profile.TYPE_INSTRUCTOR: "success",
         },
     )
-    def badge_type(self, obj):
+    def get_type(self, obj):
         return obj.type, obj.get_type_display()
 
 
 @admin.register(Address)
 class AddressAdmin(BaseAdmin):
-    pass
+
+    # Listview
+    list_display = (
+        "see_more",
+        "id",
+        "full_address",
+        "state",
+        "country",
+    )
+    list_filter = BaseAdmin.list_filter + ("state",)
+
+    # Display functions
+    @display(description="Endereço")
+    def full_address(self, obj):
+        return obj.__str__()
