@@ -1,12 +1,14 @@
-from django.contrib import admin
+from django.conf import settings
+from django.contrib import admin, messages
 from django.contrib.auth.admin import GroupAdmin as BaseGroupAdmin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import Group, User
 from django.utils.safestring import mark_safe
 from unfold.admin import ModelAdmin, StackedInline
-from unfold.decorators import display
+from unfold.decorators import action, display
 from unfold.forms import AdminPasswordChangeForm, UserChangeForm, UserCreationForm
 
+from app.api import NominatimAPI, ViaCEPAPI
 from app.profiles.models import Address, Profile
 from app.utils import BaseAdmin
 
@@ -20,7 +22,7 @@ class UserAdmin(BaseUserAdmin, ModelAdmin):
     add_form = UserCreationForm
     change_password_form = AdminPasswordChangeForm
 
-    # Listview
+    # Changelist
     list_display = (
         "see_more",
         "id",
@@ -61,14 +63,18 @@ class AddressInline(StackedInline):
     tab = True
     fields = (
         "zip_code",
+        "latitude",
+        "longitude",
         "street",
         "number",
         "neighborhood",
         "complement",
         "city",
         "state",
+        "region",
         "country",
     )
+    readonly_fields = ("latitude", "longitude")
 
 
 # Admins
@@ -76,9 +82,9 @@ class AddressInline(StackedInline):
 class ProfileAdmin(BaseAdmin):
 
     def get_queryset(self, request):
-        return super().get_queryset(request).select_related("user").prefetch_related("addresses")
+        return super().get_queryset(request).select_related("user").select_related("address")
 
-    # Listview
+    # Changelist
     list_display = (
         "see_more",
         "id",
@@ -95,8 +101,9 @@ class ProfileAdmin(BaseAdmin):
     )
     search_help_text = "Buscar por nome, e-mail, cpf ou telefone"
     list_filter = BaseAdmin.list_filter + ("type",)
+    actions_row = ["geocode_cep_nominatim", "get_cep_viacep"]
 
-    # Changeview
+    # Changeform
     inlines = (AddressInline,)
     fieldsets = (
         (
@@ -144,6 +151,58 @@ class ProfileAdmin(BaseAdmin):
     def get_type(self, obj):
         return obj.type, obj.get_type_display()
 
+    # Actions
+    @action(description="Geocodificar CEP via Nominatim")
+    def geocode_cep_nominatim(self, request, object_id):
+        profile = self.get_object(request, object_id)
+        address = profile.address
+        lat, lon = NominatimAPI.search(zip_code=address.zip_code)
+
+        if isinstance(lat, float) and isinstance(lon, float):
+            # TODO: Save latitude and longitude to address model fields
+            # address.latitude = lat
+            # address.longitude = lon
+            # address.save()
+            self.message_user(
+                request,
+                "CEP geocodificado com sucesso.",
+                messages.SUCCESS,
+            )
+
+        else:
+            self.message_user(
+                request,
+                f"Falha ao geocodificar o CEP: {address.zip_code}.",
+                messages.ERROR,
+            )
+
+    @action(description="Consultar CEP via ViaCEP")
+    def get_cep_viacep(self, request, object_id):
+        profile = self.get_object(request, object_id)
+        address = profile.address
+        data = ViaCEPAPI.search(zip_code="21645010")
+
+        if data:
+            # TODO: Save address data to address model fields
+            # address.street = data.get("street")
+            # address.neighborhood = data.get("neighborhood")
+            # address.city = data.get("city")
+            # address.state = data.get("state")
+            # address.country = "Brasil"
+            # address.save()
+            self.message_user(
+                request,
+                "CEP consultado com sucesso.",
+                messages.SUCCESS,
+            )
+
+        else:
+            self.message_user(
+                request,
+                f"Falha ao consultar o CEP: {address.zip_code}.",
+                messages.ERROR,
+            )
+
 
 @admin.register(Address)
 class AddressAdmin(BaseAdmin):
@@ -151,7 +210,7 @@ class AddressAdmin(BaseAdmin):
     def get_queryset(self, request):
         return super().get_queryset(request).select_related("profile", "profile__user")
 
-    # Listview
+    # Changelist
     list_display = (
         "see_more",
         "id",
@@ -161,7 +220,7 @@ class AddressAdmin(BaseAdmin):
     )
     list_filter = BaseAdmin.list_filter + ("state",)
 
-    # Changeview
+    # Changeform
     fieldsets = (
         (
             "Informações",

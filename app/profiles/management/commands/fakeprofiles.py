@@ -22,13 +22,15 @@ class Command(BaseCommand):
 
         users = []
         for _ in range(options["number"]):
-            username = email = _faker.unique.email()
+            first_name = _faker.first_name()
+            last_name = _faker.last_name()
+            username = email = f"{first_name.lower()}.{last_name.lower()}@example.com"
             users.append(
                 User(
                     username=username,
                     email=email,
-                    first_name=_faker.first_name(),
-                    last_name=_faker.last_name(),
+                    first_name=first_name,
+                    last_name=last_name,
                     password=_faker.password(length=18),
                 )
             )
@@ -63,14 +65,7 @@ class Command(BaseCommand):
             addresses.append(
                 Address(
                     profile=profile,
-                    street=_faker.street_name(),
-                    number=_faker.building_number(),
-                    complement=_faker.text(),
-                    neighborhood=_faker.neighborhood(),
-                    city=_faker.city(),
-                    state=_faker.state_abbr(),
                     zip_code=_faker.postcode(),
-                    country="Brasil",
                 )
             )
 

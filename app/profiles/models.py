@@ -1,6 +1,9 @@
+import re
+
 from django.contrib.auth.models import User
 from django.db import models
 
+from app.api import NominatimAPI
 from app.utils import SoftDeleteModel, TimestampedModel
 
 
@@ -27,8 +30,8 @@ class Profile(TimestampedModel, SoftDeleteModel):
         max_length=10,
         choices=TYPE_CHOICES,
     )
-    cpf = models.CharField(verbose_name="cpf", max_length=14)
-    phone = models.CharField(verbose_name="telefone", max_length=20)
+    cpf = models.CharField(verbose_name="cpf", unique=True, max_length=11)
+    phone = models.CharField(verbose_name="telefone", unique=True, max_length=13)
     birthdate = models.DateField(verbose_name="data de nascimento")
 
     class Meta:
@@ -43,27 +46,50 @@ class Profile(TimestampedModel, SoftDeleteModel):
 class Address(TimestampedModel, SoftDeleteModel):
 
     # Relations
-    profile = models.ForeignKey(
+    profile = models.OneToOneField(
         Profile,
         verbose_name="perfil",
-        related_name="addresses",
+        related_name="address",
         on_delete=models.CASCADE,
     )
 
     # Fields
-    zip_code = models.CharField(verbose_name="cep", max_length=20)
-    street = models.CharField(verbose_name="rua", max_length=255)
-    number = models.CharField(verbose_name="número", max_length=20)
-    neighborhood = models.CharField(verbose_name="bairro", max_length=100)
+    zip_code = models.CharField(verbose_name="cep", db_index=True, max_length=20)
+
+    # Fields from ViaCEP
+    street = models.CharField(verbose_name="logradouro", max_length=255, blank=True, null=True)
+    number = models.CharField(verbose_name="número", max_length=10, blank=True, null=True)
+    neighborhood = models.CharField(verbose_name="bairro", max_length=255, blank=True, null=True)
     complement = models.TextField(verbose_name="complemento", max_length=255, blank=True, null=True)
-    city = models.CharField(verbose_name="cidade", max_length=100)
-    state = models.CharField(verbose_name="estado", max_length=100)
-    country = models.CharField(verbose_name="país", max_length=100)
+    city = models.CharField(verbose_name="cidade", max_length=255, blank=True, null=True)
+    state = models.CharField(verbose_name="estado", max_length=255, blank=True, null=True)
+    region = models.CharField(verbose_name="região", max_length=255, blank=True, null=True)
+    country = models.CharField(verbose_name="país", max_length=255, blank=True, null=True)
+
+    # Fields from geocoding via NominatimAPI
+    latitude = models.FloatField(verbose_name="latitude", blank=True, null=True)
+    longitude = models.FloatField(verbose_name="longitude", blank=True, null=True)
 
     class Meta:
         verbose_name = "endereço"
         verbose_name_plural = "endereços"
         db_table = "address"
 
+    def save(self, *args, **kwargs):
+        try:
+            lat, lon = NominatimAPI.search(self.zip_code)
+            if isinstance(lat, float) and isinstance(lon, float):
+                self.latitude = lat
+                self.longitude = lon
+        except Exception:
+            print("Error geocoding address")
+
+        super().save(*args, **kwargs)
+
+    def format_zip_code(self):
+        return re.sub(r"(\d{5})(\d{3})", r"\1-\2", self.zip_code)
+
     def __str__(self):
-        return f"{self.street}, {self.number} - {self.neighborhood}, {self.city} - {self.state}, {self.zip_code}"
+        if not self.street:
+            return f"{self.format_zip_code()}"
+        return f"{self.street}{f', {self.number}' if self.number else ''} - {self.neighborhood}, {self.city} - {self.state}, {self.zip_code}"
