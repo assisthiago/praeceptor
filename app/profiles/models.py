@@ -3,7 +3,7 @@ import re
 from django.contrib.auth.models import User
 from django.db import models
 
-from app.api import NominatimAPI
+from app.api import NominatimAPI, ViaCEPAPI
 from app.utils import SoftDeleteModel, TimestampedModel
 
 
@@ -83,6 +83,18 @@ class Address(TimestampedModel, SoftDeleteModel):
                 self.longitude = lon
         except Exception:
             print("Error geocoding address")
+
+        try:
+            address_data = ViaCEPAPI.search(self.zip_code)
+            if isinstance(address_data, dict):
+                self.street = address_data.get("street")
+                self.neighborhood = address_data.get("neighborhood")
+                self.city = address_data.get("city")
+                self.state = address_data.get("state")
+                self.region = address_data.get("region")
+                self.country = address_data.get("country")
+        except Exception:
+            print("Error fetching address data")
 
         super().save(*args, **kwargs)
 

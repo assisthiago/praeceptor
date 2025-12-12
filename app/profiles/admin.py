@@ -180,14 +180,14 @@ class ProfileAdmin(BaseAdmin):
     def get_cep_viacep(self, request, object_id):
         profile = self.get_object(request, object_id)
         address = profile.address
-        data = ViaCEPAPI.search(zip_code="21645010")
+        address_data = ViaCEPAPI.search(zip_code="21645010")
 
-        if data:
+        if address_data:
             # TODO: Save address data to address model fields
-            # address.street = data.get("street")
-            # address.neighborhood = data.get("neighborhood")
-            # address.city = data.get("city")
-            # address.state = data.get("state")
+            # address.street = address_data.get("street")
+            # address.neighborhood = address_data.get("neighborhood")
+            # address.city = address_data.get("city")
+            # address.state = address_data.get("state")
             # address.country = "Brasil"
             # address.save()
             self.message_user(
