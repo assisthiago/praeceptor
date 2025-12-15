@@ -1,5 +1,8 @@
 from pathlib import Path
 
+import dj_database_url
+from decouple import config
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -144,12 +147,13 @@ UNFOLD = {
 
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
-
+DATABASE_URL = config("DATABASE_URL", "sqlite:///db.sqlite3")
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-    }
+    "default": dj_database_url.config(
+        default=DATABASE_URL,
+        conn_max_age=600,
+        conn_health_checks=True,
+    ),
 }
 
 
@@ -193,3 +197,4 @@ STATIC_URL = "static/"
 # Geocoding Settings
 NOMINATIM_ENDPOINT = "https://nominatim.openstreetmap.org"
 VIACEP_ENDPOINT = "https://viacep.com.br/ws"
+EARTH_RADIUS_KM = config("EARTH_RADIUS_KM", cast=float, default=6371.0088)

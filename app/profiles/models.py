@@ -1,10 +1,11 @@
 import re
 
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import models
 
 from app.api import NominatimAPI, ViaCEPAPI
-from app.utils import SoftDeleteModel, TimestampedModel
+from app.utils import SoftDeleteModel, TimestampedModel, bounding_box, haversine_km
 
 
 class Profile(TimestampedModel, SoftDeleteModel):
@@ -64,6 +65,50 @@ class Profile(TimestampedModel, SoftDeleteModel):
         verbose_name_plural = "perfis"
         db_table = "profile"
 
+    @staticmethod
+    def find_nearby_instructors(
+        lat: float,
+        lon: float,
+        radius_km: float = 10.0,
+        qs=None,
+    ) -> list["Profile"]:
+        """Find instructors within a certain radius from a given point.
+
+        Args:
+            lat (float): Latitude of the center point in decimal degrees.
+            lon (float): Longitude of the center point in decimal degrees.
+            radius_km (float, optional): Search radius in kilometers. Defaults to 10.0.
+            qs (models.QuerySet["Profile"], optional): Base queryset to filter from. Defaults to None.
+
+        Returns:
+            list["Profile"]: A list of instructors within the specified radius.
+        """
+
+        if qs is None:
+            qs = Profile.objects.filter(type=Profile.TYPE_INSTRUCTOR)
+
+        min_lat, max_lat, min_lon, max_lon = bounding_box(lat, lon, radius_km)
+
+        # Pre-filter candidates within the bounding box
+        candidates = qs.select_related("address").filter(
+            address__latitude__isnull=False,
+            address__longitude__isnull=False,
+            address__latitude__gte=min_lat,
+            address__latitude__lte=max_lat,
+            address__longitude__gte=min_lon,
+            address__longitude__lte=max_lon,
+        )
+
+        result = []
+        for profile in candidates:
+            # Calculate precise distance
+            a = profile.address
+            d = haversine_km(lat, lon, a.latitude, a.longitude)
+            if d <= radius_km:
+                result.append(profile)
+
+        return result
+
     def __str__(self):
         return self.user.get_full_name()
 
@@ -92,8 +137,8 @@ class Address(TimestampedModel, SoftDeleteModel):
     country = models.CharField(verbose_name="país", max_length=255, blank=True, null=True)
 
     # Fields from geocoding via NominatimAPI
-    latitude = models.FloatField(verbose_name="latitude", blank=True, null=True)
-    longitude = models.FloatField(verbose_name="longitude", blank=True, null=True)
+    latitude = models.FloatField(verbose_name="latitude", db_index=True, blank=True, null=True)
+    longitude = models.FloatField(verbose_name="longitude", db_index=True, blank=True, null=True)
 
     class Meta:
         verbose_name = "endereço"

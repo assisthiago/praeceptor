@@ -91,6 +91,7 @@ class ProfileAdmin(BaseAdmin):
         "user_full_name",
         "user_email",
         "get_type",
+        "is_zip_code_valid",
     )
     search_fields = (
         "user__first_name",
@@ -150,6 +151,13 @@ class ProfileAdmin(BaseAdmin):
     )
     def get_type(self, obj):
         return obj.type, obj.get_type_display()
+
+    @display(description="CEP", label={0: "danger", 1: "warning", 2: "success"})
+    def is_zip_code_valid(self, obj):
+        value = 0
+        value += 1 if obj.address.zip_code and obj.address.latitude else 0
+        value += 1 if obj.address.zip_code and obj.address.longitude else 0
+        return value, ["Não", "Parcial", "Sim"][value]
 
     # Actions
     @action(description="Geocodificar CEP via Nominatim")
