@@ -19,11 +19,10 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         connection.ensure_connection()  # Ensure DB connection is alive
         _faker = Faker("pt_BR")
-
         users = []
         for _ in range(options["number"]):
-            first_name = _faker.first_name()
-            last_name = _faker.last_name()
+            first_name = _faker.unique.first_name()
+            last_name = _faker.unique.last_name()
             username = email = f"{first_name.lower()}.{last_name.lower()}@example.com"
             users.append(
                 User(
@@ -45,7 +44,7 @@ class Command(BaseCommand):
             profiles.append(
                 Profile(
                     user=user,
-                    type=Profile.TYPE_INSTRUCTOR if i % 5 == 0 else Profile.TYPE_CLIENT,
+                    type=Profile.TYPE_CLIENT if i % 5 == 0 else Profile.TYPE_INSTRUCTOR,
                     cpf=_faker.random_number(digits=11, fix_len=True),
                     phone=_faker.random_number(digits=11, fix_len=True),
                     birthdate=_faker.date_of_birth(
@@ -65,7 +64,7 @@ class Command(BaseCommand):
             addresses.append(
                 Address(
                     profile=profile,
-                    zip_code=_faker.postcode(),
+                    zip_code=_faker.unique.postcode(),
                 )
             )
 

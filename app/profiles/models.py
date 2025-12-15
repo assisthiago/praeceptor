@@ -34,6 +34,31 @@ class Profile(TimestampedModel, SoftDeleteModel):
     phone = models.CharField(verbose_name="telefone", unique=True, max_length=13)
     birthdate = models.DateField(verbose_name="data de nascimento")
 
+    def save(self, *args, **kwargs):
+        if not self.address.latitude or not self.address.longitude:
+            try:
+                lat, lon = NominatimAPI.search(self.address.zip_code)
+                if isinstance(lat, float) and isinstance(lon, float):
+                    self.address.latitude = lat
+                    self.address.longitude = lon
+            except Exception:
+                print("Error geocoding address")
+
+        if not self.address.street or not self.address.neighborhood or not self.address.city or not self.address.state:
+            try:
+                address_data = ViaCEPAPI.search(self.address.zip_code)
+                if isinstance(address_data, dict):
+                    self.address.street = address_data.get("street")
+                    self.address.neighborhood = address_data.get("neighborhood")
+                    self.address.city = address_data.get("city")
+                    self.address.state = address_data.get("state")
+                    self.address.region = address_data.get("region")
+                    self.address.country = address_data.get("country")
+            except Exception:
+                print("Error fetching address data")
+
+        super().save(*args, **kwargs)
+
     class Meta:
         verbose_name = "perfil"
         verbose_name_plural = "perfis"
@@ -76,25 +101,27 @@ class Address(TimestampedModel, SoftDeleteModel):
         db_table = "address"
 
     def save(self, *args, **kwargs):
-        try:
-            lat, lon = NominatimAPI.search(self.zip_code)
-            if isinstance(lat, float) and isinstance(lon, float):
-                self.latitude = lat
-                self.longitude = lon
-        except Exception:
-            print("Error geocoding address")
+        if not self.latitude or not self.longitude:
+            try:
+                lat, lon = NominatimAPI.search(self.zip_code)
+                if isinstance(lat, float) and isinstance(lon, float):
+                    self.latitude = lat
+                    self.longitude = lon
+            except Exception:
+                print("Error geocoding address")
 
-        try:
-            address_data = ViaCEPAPI.search(self.zip_code)
-            if isinstance(address_data, dict):
-                self.street = address_data.get("street")
-                self.neighborhood = address_data.get("neighborhood")
-                self.city = address_data.get("city")
-                self.state = address_data.get("state")
-                self.region = address_data.get("region")
-                self.country = address_data.get("country")
-        except Exception:
-            print("Error fetching address data")
+        if not self.street or not self.neighborhood or not self.city or not self.state:
+            try:
+                address_data = ViaCEPAPI.search(self.zip_code)
+                if isinstance(address_data, dict):
+                    self.street = address_data.get("street")
+                    self.neighborhood = address_data.get("neighborhood")
+                    self.city = address_data.get("city")
+                    self.state = address_data.get("state")
+                    self.region = address_data.get("region")
+                    self.country = address_data.get("country")
+            except Exception:
+                print("Error fetching address data")
 
         super().save(*args, **kwargs)
 

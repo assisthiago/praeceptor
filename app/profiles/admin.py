@@ -159,10 +159,9 @@ class ProfileAdmin(BaseAdmin):
         lat, lon = NominatimAPI.search(zip_code=address.zip_code)
 
         if isinstance(lat, float) and isinstance(lon, float):
-            # TODO: Save latitude and longitude to address model fields
-            # address.latitude = lat
-            # address.longitude = lon
-            # address.save()
+            address.latitude = lat
+            address.longitude = lon
+            address.save()
             self.message_user(
                 request,
                 "CEP geocodificado com sucesso.",
@@ -183,13 +182,12 @@ class ProfileAdmin(BaseAdmin):
         address_data = ViaCEPAPI.search(zip_code="21645010")
 
         if address_data:
-            # TODO: Save address data to address model fields
-            # address.street = address_data.get("street")
-            # address.neighborhood = address_data.get("neighborhood")
-            # address.city = address_data.get("city")
-            # address.state = address_data.get("state")
-            # address.country = "Brasil"
-            # address.save()
+            address.street = address_data.get("street")
+            address.neighborhood = address_data.get("neighborhood")
+            address.city = address_data.get("city")
+            address.state = address_data.get("state")
+            address.country = "Brasil"
+            address.save()
             self.message_user(
                 request,
                 "CEP consultado com sucesso.",
