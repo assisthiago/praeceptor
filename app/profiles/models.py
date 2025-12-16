@@ -31,7 +31,7 @@ class Profile(TimestampedModel, SoftDeleteModel):
         max_length=10,
         choices=TYPE_CHOICES,
     )
-    cpf = models.CharField(verbose_name="cpf", unique=True, max_length=11)
+    cpf = models.CharField(verbose_name="CPF", unique=True, max_length=11)
     phone = models.CharField(verbose_name="telefone", unique=True, max_length=13)
     birthdate = models.DateField(verbose_name="data de nascimento")
 
@@ -124,7 +124,7 @@ class Address(TimestampedModel, SoftDeleteModel):
     )
 
     # Fields
-    zip_code = models.CharField(verbose_name="cep", db_index=True, max_length=20)
+    zip_code = models.CharField(verbose_name="CEP", db_index=True, max_length=20)
 
     # Fields from ViaCEP
     street = models.CharField(verbose_name="logradouro", max_length=255, blank=True, null=True)

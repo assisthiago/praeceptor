@@ -2,13 +2,13 @@ from django.contrib.auth.models import User
 from rest_framework import serializers
 
 from app.profiles.models import Address, Profile
+from app.utils import format_phone
 
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = (
-            "id",
             "first_name",
             "last_name",
             "email",
@@ -30,6 +30,7 @@ class AddressSerializer(serializers.ModelSerializer):
     class Meta:
         model = Address
         exclude = (
+            "id",
             "profile",
             "number",
             "complement",
@@ -52,21 +53,38 @@ class ProfileSerializer(serializers.ModelSerializer):
 
     # Custom fields
     def phone_formatted(self, obj):
-        """Format phone as (99) 99999-9999."""
-        if len(obj.phone) == 11:
-            return f"({obj.phone[:2]}) {obj.phone[2:7]}-{obj.phone[7:]}"
-        elif len(obj.phone) == 10:
-            return f"({obj.phone[:2]}) {obj.phone[2:6]}-{obj.phone[6:]}"
-        return obj.phone
+        return format_phone(self, obj)
 
     class Meta:
         model = Profile
         exclude = (
+            "id",
             "cpf",
             "created_at",
             "updated_at",
             "deleted_at",
         )
+
+
+class SimpleProfileSerializer(serializers.ModelSerializer):
+
+    user = UserSerializer(many=False, read_only=True)
+    phone = serializers.SerializerMethodField(
+        method_name="phone_formatted",
+        read_only=True,
+    )
+
+    class Meta:
+        model = Profile
+        fields = (
+            "user",
+            "phone",
+            "type",
+        )
+
+    # Custom fields
+    def phone_formatted(self, obj):
+        return format_phone(self, obj)
 
 
 class SearchProfileSerializer(serializers.Serializer):

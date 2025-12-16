@@ -2,7 +2,6 @@ from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.decorators import action
-from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
 from app.profiles.models import Address, Profile
@@ -15,9 +14,11 @@ from app.utils import BaseModelViewSet
 
 
 class ProfileViewSet(BaseModelViewSet):
-    queryset = Profile.objects.select_related("user", "address").all()
+    queryset = Profile.objects.select_related(
+        "user",
+        "address",
+    ).all()
     serializer_class = ProfileSerializer
-    permission_classes = [AllowAny]
     search_fields = filterset_fields = [
         "user__first_name",
         "user__last_name",
@@ -57,7 +58,6 @@ class ProfileViewSet(BaseModelViewSet):
     @action(
         detail=False,
         methods=["get"],
-        permission_classes=[AllowAny],
         url_path="search",
         url_name="search",
     )
@@ -90,9 +90,11 @@ class ProfileViewSet(BaseModelViewSet):
 
 
 class AddressViewSet(BaseModelViewSet):
-    queryset = Address.objects.select_related("profile", "profile__user").all()
+    queryset = Address.objects.select_related(
+        "profile",
+        "profile__user",
+    ).all()
     serializer_class = AddressSerializer
-    permission_classes = [AllowAny]
 
     # Filtering
     search_fields = filterset_fields = [

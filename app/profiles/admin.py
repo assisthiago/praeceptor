@@ -1,4 +1,3 @@
-from django.conf import settings
 from django.contrib import admin, messages
 from django.contrib.auth.admin import GroupAdmin as BaseGroupAdmin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
@@ -82,7 +81,7 @@ class AddressInline(StackedInline):
 class ProfileAdmin(BaseAdmin):
 
     def get_queryset(self, request):
-        return super().get_queryset(request).select_related("user").select_related("address")
+        return super().get_queryset(request).select_related("user", "address")
 
     # Changelist
     list_display = (
@@ -100,6 +99,7 @@ class ProfileAdmin(BaseAdmin):
         "cpf",
         "phone",
     )
+
     search_help_text = "Buscar por nome, e-mail, cpf ou telefone"
     list_filter = BaseAdmin.list_filter + ("type",)
     actions_row = ["geocode_cep_nominatim", "get_cep_viacep"]

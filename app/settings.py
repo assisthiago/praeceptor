@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "drf_yasg",  # Swagger for DRF
     "app.profiles",
+    "app.chat",
 ]
 
 MIDDLEWARE = [

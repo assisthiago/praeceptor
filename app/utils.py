@@ -1,4 +1,5 @@
 import math
+import uuid as _uuid
 
 from django.conf import settings
 from django.db import models
@@ -6,6 +7,8 @@ from django.utils import timezone
 from django.utils.safestring import mark_safe
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, viewsets
+from rest_framework.generics import get_object_or_404
+from rest_framework.permissions import AllowAny
 from unfold.admin import ModelAdmin
 from unfold.contrib.filters.admin import RangeDateFilter
 from unfold.decorators import display
@@ -54,10 +57,58 @@ class BaseAdmin(ModelAdmin):
         return mark_safe('<span class="material-symbols-outlined">visibility</span>')
 
 
+# ==============================================================================
+
+
 # Abstract rest framework ModelViewSet
-class BaseModelViewSet(viewsets.ModelViewSet):
+class LookupIdOrUuidMixin:
+    """Mixin to allow lookup by either ID (pk) or UUID field."""
+
+    uuid_field_name = "uuid"  # padrão do nome do campo
+
+    def _is_uuid(self, value: str) -> bool:
+        """Check if the given value is a valid UUID."""
+        try:
+            _uuid.UUID(str(value))
+            return True
+        except Exception:
+            return False
+
+    def _model_has_uuid_field(self) -> bool:
+        """Check if the model has the specified UUID field."""
+        model = self.get_queryset().model
+        try:
+            model._meta.get_field(self.uuid_field_name)
+            return True
+        except Exception:
+            return False
+
+    def get_object(self):
+        """Retrieve the object based on either UUID or ID."""
+        queryset = self.filter_queryset(self.get_queryset())
+
+        lookup_kwarg = self.lookup_url_kwarg or self.lookup_field  # normalmente "pk"
+        lookup_value = self.kwargs.get(lookup_kwarg)
+
+        if lookup_value is None:
+            raise AssertionError("Lookup value not found in URL kwargs.")
+
+        if self._model_has_uuid_field() and self._is_uuid(lookup_value):
+            obj = get_object_or_404(queryset, **{self.uuid_field_name: lookup_value})
+        else:
+            obj = get_object_or_404(queryset, pk=lookup_value)
+
+        self.check_object_permissions(self.request, obj)
+        return obj
+
+
+class BaseModelViewSet(LookupIdOrUuidMixin, viewsets.ModelViewSet):
     """Base viewset with common configurations."""
 
+    permission_classes = [AllowAny]  # Default permission, can be overridden in subclasses
+    lookup_value_regex = r"(?:\d+|[0-9a-fA-F-]{36})"  # Accept both integer IDs and UUIDs
+
+    # Default filter backends and ordering
     filter_backends = [
         filters.SearchFilter,
         DjangoFilterBackend,
@@ -67,7 +118,10 @@ class BaseModelViewSet(viewsets.ModelViewSet):
     ordering = ["-created_at"]
 
 
-# Functions
+# ==============================================================================
+
+
+# Geographical functions
 def haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     """Calculate the great-circle distance between two points on the Earth surface.
 
@@ -106,3 +160,24 @@ def bounding_box(lat: float, lon: float, radius_km: float) -> tuple[float, float
     cos_lat = math.cos(math.radians(lat))  # 1st degree of longitude ~ 111.320*cos(latitude) km
     lon_delta = radius_km / (111.320 * max(cos_lat, 1e-6))  # Avoid division by zero at poles
     return (lat - lat_delta, lat + lat_delta, lon - lon_delta, lon + lon_delta)
+
+
+# ==============================================================================
+
+
+# Format functions
+def format_phone(obj: models.Model) -> str:
+    """Format phone number into standard representation.
+    (999) 99999-9999 or (99) 9999-9999
+
+    Args:
+        obj (models.Model): Object with 'phone' attribute.
+
+    Returns:
+        str: Formatted phone number.
+    """
+    if len(obj.phone) == 11:
+        return f"({obj.phone[:2]}) {obj.phone[2:7]}-{obj.phone[7:]}"
+    elif len(obj.phone) == 10:
+        return f"({obj.phone[:2]}) {obj.phone[2:6]}-{obj.phone[6:]}"
+    return obj.phone

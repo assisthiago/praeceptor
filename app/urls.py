@@ -2,29 +2,43 @@ from debug_toolbar.toolbar import debug_toolbar_urls
 from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path
-from drf_yasg import openapi
-from drf_yasg.views import get_schema_view
-from rest_framework import permissions, routers
+from rest_framework import routers
 
+from app.chat import views as chat_views
+from app.documentation import schema_view
 from app.profiles import views as profile_views
 
-# Swagger/OpenAPI 3 schema view
-schema_view = get_schema_view(
-    openapi.Info(
-        title="Snippets API",
-        default_version="v1",
-        description="Test description",
-        terms_of_service="https://www.google.com/policies/terms/",
-        contact=openapi.Contact(email="contact@snippets.local"),
-        license=openapi.License(name="BSD License"),
-    ),
-    public=True,
-    permission_classes=(permissions.AllowAny,),
+router = routers.DefaultRouter()
+
+# Chat app
+router.register(
+    r"threads",
+    chat_views.ThreadViewSet,
+    basename="thread",
+)
+router.register(
+    r"thread-participants",
+    chat_views.ThreadParticipantViewSet,
+    basename="threadparticipant",
+)
+router.register(
+    r"messages",
+    chat_views.MessageViewSet,
+    basename="message",
 )
 
-router = routers.DefaultRouter()
-router.register(r"profiles", profile_views.ProfileViewSet)
-router.register(r"addresses", profile_views.AddressViewSet)
+# Profile app
+router.register(
+    r"profiles",
+    profile_views.ProfileViewSet,
+    basename="profile",
+)
+router.register(
+    r"addresses",
+    profile_views.AddressViewSet,
+    basename="address",
+)
+
 
 urlpatterns = [
     path("admin/", admin.site.urls),
